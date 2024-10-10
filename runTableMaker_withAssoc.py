@@ -19,41 +19,27 @@ parser.add_argument('--add_track_prop', help="Add track propagation to the inner
 parser.add_argument("--add_weakdecay_ind", help = "Add Converts V0 and cascade version 000 to 001", action = "store_true")
 parser.add_argument("--add_col_conv", help = "Add the converter from collision to collision+001", action = "store_true")
 parser.add_argument("--add_track_extra_conv", help = "Add the converter from track_extra to track_extra+001", action = "store_true")
+parser.add_argument("--add_mft_conv", help = "Add the converter from mfttrack_001 to mfttrack", action = "store_true")
 extrargs = parser.parse_args()
 
 commonDeps = ["o2-analysis-timestamp", "o2-analysis-event-selection", "o2-analysis-multiplicity-table"]
-barrelDeps = ["o2-analysis-trackselection", "o2-analysis-trackextension","o2-analysis-pid-tof-base", "o2-analysis-pid-tof", "o2-analysis-pid-tof-full", "o2-analysis-pid-tof-beta", "o2-analysis-pid-tpc-base", "o2-analysis-pid-tpc-full"]
+#commonDeps = ["o2-analysis-timestamp", "o2-analysis-event-selection"]
+barrelDeps = ["o2-analysis-trackselection", "o2-analysis-trackextension","o2-analysis-pid-tof-base", "o2-analysis-pid-tof", "o2-analysis-pid-tof-full", "o2-analysis-pid-tof-beta", "o2-analysis-pid-tpc-base", "o2-analysis-pid-tpc-full", "o2-analysis-track-to-collision-associator"]
 #barrelDeps = ["o2-analysis-trackselection","o2-analysis-pid-tof-base", "o2-analysis-pid-tof", "o2-analysis-pid-tof-full", "o2-analysis-pid-tof-beta", "o2-analysis-pid-tpc-full"]
-muonDeps = ["o2-analysis-fwdtrackextension"]
+muonDeps = ["o2-analysis-fwdtrackextension", "o2-analysis-fwdtrack-to-collision-associator"]
+#muonDeps = ["o2-analysis-fwdtrackextension"]
 specificDeps = {
-  "processFull" : [],
-  "processFullWithCov" : [],
-  "processFullWithCovAndEventFilter" : ["o2-analysis-dq-filter-pp","o2-analysis-fwdtrackextension"],
-  "processFullWithCent" : ["o2-analysis-centrality-table"],
-  "processFullWithCentAndMults" : ["o2-analysis-centrality-table"],
-  "processBarrelOnly" : [],
-  "processBarrelOnlyWithCov" : [],
-  "processBarrelOnlyWithV0Bits" : ["o2-analysis-dq-v0-selector"],
-  "processBarrelOnlyWithDalitzBits" : ["o2-analysis-dq-dalitz-selection"],
-  "processBarrelOnlyWithEventFilter" : ["o2-analysis-dq-filter-pp","o2-analysis-fwdtrackextension"],
-  "processBarrelOnlyWithMults" : [],
-  "processBarrelOnlyWithCovAndEventFilter" : ["o2-analysis-dq-filter-pp","o2-analysis-fwdtrackextension"],
-  "processBarrelOnlyWithQvector" : ["o2-analysis-centrality-table", "o2-analysis-dq-flow"],
-  "processBarrelOnlyWithCent" : ["o2-analysis-centrality-table"],
-  "processBarrelOnlyWithCentAndMults" : ["o2-analysis-centrality-table"],
-  "processMuonOnly" : [],
-  "processMuonOnlyWithCov" : [],
-  "processMuonOnlyWithCent" : ["o2-analysis-centrality-table"],
-  "processMuonOnlyWithMults" : [],
-  "processMuonOnlyWithCentAndMults" : ["o2-analysis-centrality-table"],
-  "processMuonOnlyWithCovAndCent" : ["o2-analysis-centrality-table"],
-  "processMuonOnlyWithQvector" : ["o2-analysis-centrality-table", "o2-analysis-dq-flow"],
-  "processMuonOnlyWithFilter" : ["o2-analysis-dq-filter-pp"],
-  "processAmbiguousMuonOnly" : [],
-  "processAmbiguousMuonOnlyWithCov" : [],
-  "processAmbiguousBarrelOnly" : []
-  # "processFullWithCentWithV0Bits": ["o2-analysis-centrality-table","o2-analysis-dq-v0-selector", "o2-analysis-weak-decay-indices"],
-  # "processFullWithEventFilterWithV0Bits": ["o2-analysis-dq-filter-pp","o2-analysis-dq-v0-selector", "o2-analysis-weak-decay-indices"],
+  "processPP": [],
+  "processPPBarrelOnly": [],
+  "processPPMuonOnly": [],
+  "processPPWithFilter": ["o2-analysis-dq-filter-pp-with-association"],
+  "processPPWithFilterBarrelOnly": ["o2-analysis-dq-filter-pp-with-association"],
+  "processPPWithFilterMuonOnly": ["o2-analysis-dq-filter-pp-with-association"],
+  "processPPWithFilterMuonMFT": ["o2-analysis-dq-filter-pp-with-association"],
+  "processPbPb": [],
+  "processPbPbBarrelOnly": [],
+  "processPbPbMuonOnly": [],
+  "processPbPbMuonMFT": []
 }
 
 # Definition of all the tables we may write
@@ -62,53 +48,46 @@ tables = {
   "ReducedEventsExtended" : {"table": "AOD/REEXTENDED/0"},
   "ReducedEventsVtxCov" : {"table": "AOD/REVTXCOV/0"},
   "ReducedEventsQvector" : {"table": "AOD/REQVECTOR/0"},
-  "ReducedMCEventLabels" : {"table": "AOD/REMCCOLLBL/0"},
-  "ReducedMCEvents" : {"table": "AOD/REDUCEDMCEVENT/0"},
+  "ReducedEventsMultPV" : {"table": "AOD/REMULTPV/0"},
+  "ReducedEventsMultAll" : {"table": "AOD/REMULTALL/0"},
   "ReducedTracks" : {"table": "AOD/REDUCEDTRACK/0"},
   "ReducedTracksBarrel" : {"table": "AOD/RTBARREL/0"},
   "ReducedTracksBarrelCov" : {"table": "AOD/RTBARRELCOV/0"},
   "ReducedTracksBarrelPID" : {"table": "AOD/RTBARRELPID/0"},
   "ReducedTracksBarrelLabels" : {"table": "AOD/RTBARRELLABELS/0"},
-  "ReducedMCTracks" : {"table": "AOD/REDUCEDMCTRACK/0"},
-  "ReducedMuons" : {"table": "AOD/RTMUON/0"},
+  "ReducedMuons" : {"table": "AOD/REDUCEDMUON/0"},
   "ReducedMuonsExtra" : {"table": "AOD/RTMUONEXTRA/0"},
   "ReducedMuonsCov" : {"table": "AOD/RTMUONCOV/0"},
   "ReducedMuonsLabels" : {"table": "AOD/RTMUONSLABELS/0"},
-  "AmbiguousTracksMid" : {"table": "AOD/AMBIGUOUSTRACK/0"},
-  "AmbiguousTracksFwd" : {"table": "AOD/AMBIGUOUSFWDTR/0"},
-  "DalitzBits" : {"table": "AOD/DALITZBITS/0"}
+  "DalitzBits" : {"table": "AOD/DALITZBITS/0"},
+  "ReducedMFTTracks" : {"table": "AOD/REDUCEDMFT/0"},
+  "ReducedMFTTracksExtra" : {"table": "AOD/RMFTEXTRA/0"},
+  "ReducedTracksAssoc" : {"table": "AOD/RTASSOC/0"},
+  "ReducedMuonsAssoc" : {"table": "AOD/RMASSOC/0"},
+  "ReducedMFTAssoc" : {"table": "AOD/RMFTASSOC/0"},
+  "ReducedMCEvents" : {"table": "AOD/REDUCEDMCEVENT/0"},
+  "ReducedMCEventLabels" : {"table": "AOD/REMCCOLLBL/0"},
+  "ReducedMCTracks" : {"table": "AOD/REDUCEDMCTRACK/0"},
+  "ReducedTracksBarrelLabels" : {"table": "AOD/RTBARRELLABELS/0"},
+  "ReducedMuonsLabels" : {"table": "AOD/RTMUONSLABELS/0"}
 }
 # Tables to be written, per process function
-commonTables = ["ReducedEvents", "ReducedEventsExtended", "ReducedEventsVtxCov"]
-barrelCommonTables = ["ReducedTracks","ReducedTracksBarrel","ReducedTracksBarrelPID"]
-muonCommonTables = ["ReducedMuons", "ReducedMuonsExtra"]
+commonTables = ["ReducedEvents", "ReducedEventsExtended", "ReducedEventsVtxCov", "ReducedEventsMultPV", "ReducedEventsMultAll"]
+barrelCommonTables = ["ReducedTracks","ReducedTracksBarrel","ReducedTracksBarrelPID", "ReducedTracksBarrelCov", "ReducedTracksAssoc"]
+muonCommonTables = ["ReducedMuons", "ReducedMuonsExtra", "ReducedMuonsAssoc", "ReducedMuonsCov"]
+#muonCommonTables = ["ReducedMuons", "ReducedMuonsExtra", "ReducedMFTTracks", "ReducedMFTTracksExtra", "ReducedMuonsAssoc", "ReducedMFTAssoc"]
 specificTables = {
-  "processFull": [],
-  "processFullWithCov": ["ReducedTracksBarrelCov", "ReducedMuonsCov"],
-  "processFullWithCovAndEventFilter": ["ReducedTracksBarrelCov", "ReducedMuonsCov"],
-  "processFullWithCent": [],
-  "processFullWithCentAndMults": [],
-  "processBarrelOnly": [],
-  "processBarrelOnlyWithCov": ["ReducedTracksBarrelCov"],
-  "processBarrelOnlyWithV0Bits": [],
-  "processBarrelOnlyWithDalitzBits": ["DalitzBits"],
-  "processBarrelOnlyWithQvector": ["ReducedEventsQvector"],
-  "processBarrelOnlyWithEventFilter": [],
-  "processBarrelOnlyWithMults": [],
-  "processBarrelOnlyWithCovAndEventFilter": ["ReducedTracksBarrelCov"],
-  "processBarrelOnlyWithCent": [],
-  "processBarrelOnlyWithCentAndMults": [],
-  "processMuonOnly": [],
-  "processMuonOnlyWithCov": ["ReducedMuonsCov"],
-  "processMuonOnlyWithCent": [],
-  "processMuonOnlyWithMults": [],
-  "processMuonOnlyWithCentAndMults": [],
-  "processMuonOnlyWithCovAndCent": ["ReducedMuonsCov"],
-  "processMuonOnlyWithQvector": ["ReducedEventsQvector"],
-  "processMuonOnlyWithFilter": [],
-  "processAmbiguousMuonOnly": ["AmbiguousTracksFwd"],
-  "processAmbiguousMuonOnlyWithCov": ["AmbiguousTracksFwd", "ReducedMuonsCov"],
-  "processAmbiguousBarrelOnly": ["AmbiguousTracksMid"]
+  "processPP": ["ReducedMFTTracks", "ReducedMFTTracksExtra", "ReducedMFTAssoc"],
+  "processPPBarrelOnly": [],
+  "processPPMuonOnly": ["ReducedMFTTracks", "ReducedMFTTracksExtra", "ReducedMFTAssoc"],
+  "processPPWithFilter": ["ReducedMFTTracks", "ReducedMFTTracksExtra", "ReducedMFTAssoc"],
+  "processPPWithFilterBarrelOnly": [],
+  "processPPWithFilterMuonOnly": [],
+  "processPPWithFilterMuonMFT": ["ReducedMFTTracks", "ReducedMFTTracksExtra", "ReducedMFTAssoc"],
+  "processPbPb": ["ReducedMFTTracks", "ReducedMFTTracksExtra", "ReducedMFTAssoc"],
+  "processPbPbBarrelOnly": [],
+  "processPbPbMuonOnly": [],
+  "processPbPbMuonMFT": ["ReducedMFTTracks", "ReducedMFTTracksExtra", "ReducedMFTAssoc"]
 }
 
 # Make some checks on provided arguments
@@ -149,10 +128,11 @@ if extrargs.arg != "" and extrargs.arg is not None:
     config[arg[0]][arg[1]] = arg[2]
 
 taskNameInConfig = "table-maker"
-taskNameInCommandLine = "o2-analysis-dq-table-maker"
+taskNameInCommandLine = "o2-analysis-dq-table-maker-with-assoc"
 if runOverMC == True:
   taskNameInConfig = "table-maker-m-c"
-  taskNameInCommandLine = "o2-analysis-dq-table-maker-mc"
+  taskNameInCommandLine = "o2-analysis-dq-table-maker-mc-with-assoc"
+
 
 if not taskNameInConfig in config:
   print("ERROR: Task to be run not found in the configuration file!")
@@ -172,12 +152,17 @@ for processFunc in specificDeps.keys():
   if not processFunc in config[taskNameInConfig].keys():
     continue
   if config[taskNameInConfig][processFunc] == "true":
-    if "processFull" in processFunc or "processBarrel" in processFunc or "processAmbiguousBarrel" in processFunc:
+    if "processPP" in processFunc or "processPbPb" in processFunc:
       for dep in barrelDeps:
         depsToRun[dep] = 1
-    if "processFull" in processFunc or "processMuon" in processFunc or "processAmbiguousMuon" in processFunc:
       for dep in muonDeps:
-        depsToRun[dep] = 1
+        depsToRun[dep] = 1  
+    if "BarrelOnly" in processFunc:
+      for dep in muonDeps:
+        depsToRun[dep] = 0
+    if "MuonOnly" in processFunc:
+      for dep in barrelDeps:
+        depsToRun[dep] = 0    
     for dep in specificDeps[processFunc]:
       depsToRun[dep] = 1
 
@@ -196,20 +181,31 @@ for processFunc in specificDeps.keys():
   if config[taskNameInConfig][processFunc] == "true":
     print("processFunc ========")
     print(processFunc)
-    if "processFull" in processFunc or "processBarrel" in processFunc:
+    if "processPP" in processFunc or "processPbPb" in processFunc:
       print("common barrel tables==========")
       for table in barrelCommonTables:
         print(table)
         tablesToProduce[table] = 1
+      for table in muonCommonTables:
+        print(table)
+        tablesToProduce[table] = 1  
       if runOverMC == True:
         tablesToProduce["ReducedTracksBarrelLabels"] = 1
-    if "processFull" in processFunc or "processMuon" in processFunc:
+        tablesToProduce["ReducedMuonsLabels"] = 1
+    if "BarrelOnly" in processFunc:
       print("common muon tables==========")
       for table in muonCommonTables:
         print(table)
-        tablesToProduce[table] = 1
+        tablesToProduce[table] = 0
       if runOverMC == True:
-        tablesToProduce["ReducedMuonsLabels"] = 1
+        tablesToProduce["ReducedMuonsLabels"] = 0
+    if "MuonOnly" in processFunc:
+      print("common muon tables==========")
+      for table in barrelCommonTables:
+        print(table)
+        tablesToProduce[table] = 0
+      if runOverMC == True:
+        tablesToProduce["ReducedTracksBarrelLabels"] = 0    
     if runOverMC == True:
       tablesToProduce["ReducedMCTracks"] = 1
     print("specific tables==========")
@@ -265,6 +261,9 @@ if extrargs.add_col_conv:
 
 if extrargs.add_track_extra_conv:
     commandToRun += " | o2-analysis-tracks-extra-converter --configuration json://" + updatedConfigFileName + " -b"
+
+if extrargs.add_mft_conv:
+    commandToRun += " | o2-analysis-mft-tracks-converter --configuration json://" + updatedConfigFileName + " -b"
 
 print("====================================================================================================================")
 print("Command to run:")
